@@ -8,8 +8,15 @@ import geopandas as gpd
 # -----------------------------
 df = pd.read_csv("Data/Health.csv") 
 # read shapefile 
-gdf = gpd.read_file("Data/shape/new_boundary/AA_SUB_CITY_BOUNDARY_08_MARCH_2023.shp")
-numeric_cols = df.select_dtypes(include="number").columns
+gdf = gpd.read_file("D:\Python Training\Dashbord\MCH\MCHdash\Data\Shapes/Addis.shp")
+numeric_cols = df["Sub city"]
+colors = [
+    "#4F46E5",   # Indigo
+    "#06B6D4",   # Cyan
+    "#10B981",   # Green
+    "#F59E0B",   # Amber
+    "#EF4444"    # Red
+]
 # ----------------------------- 
 # App
 # ----------------------------- 
@@ -17,17 +24,18 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
            meta_tags=[{'name': 'viewport',
                             'content': 'width=device-width, initial-scale=1.0'}]           
            )
+#print(gdf["Sub_City"])
+#print(df["Sub city"])
+
+merged = gdf.merge(
+    df,
+    left_on="Sub_City",   # shapefile column
+    right_on="Sub city",
+    how="left"
+)
+
 gdf = gdf.to_crs(epsg=4326)
 
-fig = px.choropleth_mapbox(
-    gdf,
-    geojson=gdf.__geo_interface__,
-    locations=gdf.index,
-    mapbox_style="carto-positron",
-    center={"lat": 9.03, "lon": 38.74},
-    zoom=10,
-    opacity=0.5
-)
 # -----------------------------
 # App Layout
 # -----------------------------
@@ -40,10 +48,8 @@ app.layout = dbc.Container([
         ]),
         dbc.Col([
             dbc.Row([
-                html.H4("MCH Dashboard", className="text-center mb-4 text-primary"),
-            ],style={"margin":10}),
-            dbc.Row([
-                 html.H4("የሀናቶች እና ህፃናት መረጃ ", className="text-center m-2 text-secondary" )
+                html.H5("Addis Ababa City MCH Dashboard", className="text-center mb-1 text-primary"),
+                html.H6('የአዲስ እበባ ከተማ የእናቶች እና ህፃናት መረጃ ጥንቅር',className="text-center m-2 text-secondary"),
              ]),
          ]),
         dbc.Col([
@@ -59,16 +65,23 @@ app.layout = dbc.Container([
            dcc.Dropdown(
                     id="health_value",
                     options=[
-                        {"label": col.replace("_", " ").title(), "value": col}
-                        for col in numeric_cols
+                        {"label": "First Antenatal care", "value": "anc1"},
+                        {"label": "Second Antenatal care", "value": "anc2"},
+                        {"label": "Total Antenatal car ", "value": "anc"},
+                        {"label": "Total delivery", "value": "delivery"},
+                        {"label": "Breech delivery", "value": "BCG"},
+                        {"label": "Spontaneous Vaginal Delivery", "value": "SVD"},
+                        {"label": "Still birth n (Per 1000 births)", "value": "SB"},
+                        {"label": "Neonatal death (Per 1000 live births)", "value": "ND"},
+                        {"label": "Maternal death (Per 100,000 births)", "value": "MD"}                      
                         
-                    ],value=numeric_cols[0],
+                    ],value='anc',
                     clearable=False,className="p-1"
                      ),
                ],width={'size':5,'offset':1}),
                 dbc.Col ([
                      dcc.Dropdown(
-                    id="health_value2",
+                    id="subcity-dropdown",
                     options=[
                         {"label": col.replace("_", " ").title(), "value": col}
                         for col in numeric_cols
@@ -85,7 +98,7 @@ app.layout = dbc.Container([
         dbc.Row([   
             dbc.Col([
                  html.P("map here",className="text-center" ) ,
-                dcc.Graph(figure=fig)
+                dcc.Graph(id="Addis_map",figure={})
             ],xs=12, sm=12, md=12, lg=5, xl=5),
              
              # cart her 
@@ -98,9 +111,9 @@ app.layout = dbc.Container([
                             dbc.Card(
                                 dbc.CardBody([
                                    
-                                    html.H4("ANC"),
+                                    html.H6("Antenatal car"),
                                     html.Hr(),
-                                    html.H5("230")
+                                    html.H5(id="anc-card")
                                 ],
                                 ),
                             )
@@ -108,9 +121,9 @@ app.layout = dbc.Container([
                         dbc.Row([
                             dbc.Card(
                                 dbc.CardBody([
-                                    html.H4("ANC"),
+                                    html.H6("Neonatal death Per 1000 live births"),
                                     html.Hr(),
-                                    html.H5("230")
+                                    html.H5(id="ND-cart")
                                 ],
                                 ),
                             )
@@ -118,9 +131,9 @@ app.layout = dbc.Container([
                         dbc.Row([
                             dbc.Card(
                                 dbc.CardBody([
-                                    html.H4("ANC"),
+                                    html.H6("Breech delivery"),
                                     html.Hr(),
-                                    html.H5("230")
+                                    html.H5(id="BD-cart")
                                 ],
                                 ),
                             )
@@ -134,9 +147,9 @@ app.layout = dbc.Container([
                         dbc.Row([
                             dbc.Card(
                                 dbc.CardBody([
-                                    html.H4("ANC"),
+                                    html.H6("Spontaneous Vaginal Delivery"),
                                     html.Hr(),
-                                    html.H5("230")
+                                    html.H5(id="SVD-cart")
                                 ],
                                 ),
                             )
@@ -144,9 +157,9 @@ app.layout = dbc.Container([
                         dbc.Row([
                             dbc.Card(
                                 dbc.CardBody([
-                                    html.H4("ANC"),
+                                    html.H6("Total delivery"),
                                     html.Hr(),
-                                    html.H5("230")
+                                    html.H5(id="delivery-cart")
                                 ],
                                 ),
                             )
@@ -154,9 +167,9 @@ app.layout = dbc.Container([
                         dbc.Row([
                            dbc.Card(
                                 dbc.CardBody([
-                                    html.H4("ANC"),
+                                    html.H6("Still birth Per 1000 "),
                                     html.Hr(),
-                                    html.H5("230")
+                                    html.H5(id="SB-cart")
                                 ],
                                 ),
                             )
@@ -174,7 +187,7 @@ app.layout = dbc.Container([
 
          dbc.Col([
                  html.P("Bar chart",className="text-center" ) ,
-                dcc.Graph(id="Bar_graphe",figure= {})
+                dcc.Graph(id="Bar_graphe", figure= {})
             ],xs=12, sm=12, md=12, lg=5, xl=5),
              
             dbc.Col([
@@ -184,7 +197,7 @@ app.layout = dbc.Container([
     ], justify="around",className="mt-4 mb-4"),
     # for line graphe
     dbc.Row([
-        dcc.Graph(id="line_chart",figure= {})
+        dcc.Graph(id="line_chart",animate=True)
     ]),
     # footer 
     dbc.Row([
@@ -212,6 +225,7 @@ app.layout = dbc.Container([
     Output("Bar_graphe", "figure"),
     Output("Pie_graphe", "figure"),
     Output("line_chart", "figure"),
+    Output("Addis_map","figure"),
     Input("health_value", "value")
 )
 def update_charts(value):
@@ -223,9 +237,11 @@ def update_charts(value):
         sorted_df,
         x="Sub city",
         y=value,
+        height=500,
+        template="plotly_white",   
         title=f"{value} by Sub city"
     )
-
+    
     # PIE CHART
     pie_fig = px.pie(
         sorted_df,
@@ -239,12 +255,104 @@ def update_charts(value):
         sorted_df,
         x="Sub city",
         y=value,
+        template="plotly_white", 
         title=f"{value} Trend by Sub city",
         markers=True
+        
     )
+    # Make line attractive
+    line_fig.update_traces(
+    line=dict(
+        width=5,
+        shape="spline"   # smooth curve
+    ),
 
-    return bar_fig, pie_fig,line_fig
+    marker=dict(
+        size=12,
+        line=dict(width=2, color="white")
+    ),
+    hovertemplate= "<b>%{x}</b><br>" +
+    f"{value}: "+"%{y}<extra></extra>"
+    )
+    line_fig.update_layout(
 
+    height=500,
 
+    title={
+        "x": 0.5,
+        "xanchor": "center",
+        "font": {
+            "size": 24
+        }
+    },
+
+    xaxis_title="Sub City",
+    yaxis_title=value,
+
+    hovermode="x unified",
+
+    paper_bgcolor="white",
+    plot_bgcolor="white",
+
+    font=dict(
+        family="Arial",
+        size=14
+    ),
+
+    margin=dict(
+        t=80,
+        l=40,
+        r=40,
+        b=40
+    ),
+
+    transition={
+        "duration": 1200,
+        "easing": "cubic-in-out"
+    }
+    )
+    
+    
+    # display map 
+    fig_map = px.choropleth_mapbox(
+    merged,
+    geojson=gdf.__geo_interface__,
+    locations=merged.index,
+    color=value,
+    mapbox_style="carto-positron",
+    #mapbox_style="open-street-map",
+    center={"lat": 8.96, "lon": 38.80},
+    zoom=10.0,
+    opacity=0.7,
+     hover_name="Sub city",
+     color_continuous_scale=px.colors.sequential.Peach_r,
+     # title=f"Addis Ababa MCH "
+    )
+    fig_map.update_layout(margin={"r":6,"t":6,"l":6,"b":6})
+
+    return bar_fig, pie_fig,line_fig,fig_map
+@app.callback(
+      Output("anc-card", "children"),
+      Output("ND-cart", "children"),
+      Output("BD-cart", "children"),
+      Output("SVD-cart", "children"),
+      Output("delivery-cart", "children"),
+      Output("SB-cart", "children"),
+
+      Input("subcity-dropdown", "value")
+      )
+
+def update_Data(subcity):
+    Tanc = df[df["Sub city"]==subcity]
+    anc=Tanc["anc"].iloc[0]
+    nd=Tanc["ND"].iloc[0]
+    Bd=Tanc["BCG"].iloc[0]
+    svd=Tanc["SVD"].iloc[0]
+    TDs=Tanc["delivery"].iloc[0]
+    TDs=Tanc["delivery"].iloc[0]
+    SBs=Tanc["SB"].iloc[0]
+
+    
+    return anc,nd,Bd,svd,TDs,SBs
 if __name__ == "__main__":
     app.run(debug=True)
