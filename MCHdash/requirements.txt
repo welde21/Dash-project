@@ -3,4 +3,4 @@ pandas
 plotly
 gunicorn
 geopandas
-dash-bootstrap-components
+dash-bootstrap-component
