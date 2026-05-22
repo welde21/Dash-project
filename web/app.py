@@ -5,18 +5,21 @@ import geopandas as gpd
 from dash import Dash, html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
 
+
 # =====================================================
 # LOAD DATA
 # =====================================================
 
+
 df = pd.read_csv("data/Health.csv")
 
 gdf = gpd.read_file("data/Addis.geojson")
-
-# Convert CRS
+#print(gdf.head())
+# IMPORTANT:
+# Convert CRS BEFORE merge
 gdf = gdf.to_crs(epsg=4326)
 
-# Merge data
+# Merge shapefile with dataframe
 merged = gdf.merge(
     df,
     left_on="Sub_City",
@@ -24,13 +27,10 @@ merged = gdf.merge(
     how="left"
 )
 
-# Add unique ID for map
-merged["id"] = merged.index.astype(str)
-
-# Dropdown values
+# Subcity values
 subcities = df["Sub city"].unique()
 
-# Colors
+# Dashboard colors
 colors = [
     "#4F46E5",
     "#06B6D4",
@@ -39,13 +39,14 @@ colors = [
     "#EF4444"
 ]
 
+
 # =====================================================
 # APP
 # =====================================================
-
 app = Dash(
     __name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
+
     meta_tags=[
         {
             "name": "viewport",
@@ -54,12 +55,10 @@ app = Dash(
     ]
 )
 
-server = app.server
 
 # =====================================================
 # KPI CARD FUNCTION
 # =====================================================
-
 def create_card(title, card_id, color):
 
     return dbc.Card(
@@ -86,21 +85,29 @@ def create_card(title, card_id, color):
         """
     )
 
+server=app.server
 # =====================================================
 # LAYOUT
 # =====================================================
-
 app.layout = dbc.Container([
 
+    # =================================================
     # HEADER
+    # =================================================
     dbc.Row([
 
         dbc.Col([
 
-            html.Img(
-                src="https://raw.githubusercontent.com/welde21/Dash-project/main/MCHdash/assets/logo.png",
-                height="90px",
-                className="img-fluid"
+            html.Div(
+                html.Img(
+                        src="/assets/logo.png",
+                    height="100px"
+                    ),
+                className="""
+                text-center
+                fw-bold
+                text-primary
+                """
             )
 
         ],
@@ -133,33 +140,45 @@ app.layout = dbc.Container([
         ],
             width=8,
             className="d-flex flex-column justify-content-center"
+        ),
+
+        dbc.Col([
+
+            html.Div(
+               # "HEALTH",
+                className="""
+                text-center
+                fw-bold
+                text-success
+                """
+            )
+
+        ],
+            width=2,
+            className="d-flex align-items-center justify-content-center"
         )
 
-    ],
-
-        style={
-            "position": "fixed",
-            "top": "0",
-            "left": "0",
-            "right": "0",
-            "zIndex": "999",
-            "backgroundColor": "white",
-            "padding": "10px"
-        },
-
+    ],style={
+        "position": "fixed",
+        "top": "0",
+        "left": "0",
+        "right": "0",
+        "zIndex": "999",
+        "backgroundColor": "white",
+        "padding": "10px",
+    },
         className="""
+        bg-white
         shadow-sm
         rounded-4
         p-3
+        mb-4
         """
     ),
-
     html.Div(style={"height": "130px"}),
-
-    # =====================================================
+    # =================================================
     # DROPDOWNS
-    # =====================================================
-
+    # =================================================
     dbc.Row([
 
         dbc.Col([
@@ -170,15 +189,50 @@ app.layout = dbc.Container([
 
                 options=[
 
-                    {"label": "First Antenatal Care", "value": "anc1"},
-                    {"label": "Second Antenatal Care", "value": "anc2"},
-                    {"label": "Total Antenatal Care", "value": "anc"},
-                    {"label": "Total Delivery", "value": "delivery"},
-                    {"label": "Breech Delivery", "value": "BCG"},
-                    {"label": "Spontaneous Vaginal Delivery", "value": "SVD"},
-                    {"label": "Still Birth", "value": "SB"},
-                    {"label": "Neonatal Death", "value": "ND"},
-                    {"label": "Maternal Death", "value": "MD"}
+                    {
+                        "label": "First Antenatal Care",
+                        "value": "anc1"
+                    },
+
+                    {
+                        "label": "Second Antenatal Care",
+                        "value": "anc2"
+                    },
+
+                    {
+                        "label": "Total Antenatal Care",
+                        "value": "anc"
+                    },
+
+                    {
+                        "label": "Total Delivery",
+                        "value": "delivery"
+                    },
+
+                    {
+                        "label": "Breech Delivery",
+                        "value": "BCG"
+                    },
+
+                    {
+                        "label": "Spontaneous Vaginal Delivery",
+                        "value": "SVD"
+                    },
+
+                    {
+                        "label": "Still Birth",
+                        "value": "SB"
+                    },
+
+                    {
+                        "label": "Neonatal Death",
+                        "value": "ND"
+                    },
+
+                    {
+                        "label": "Maternal Death",
+                        "value": "MD"
+                    }
 
                 ],
 
@@ -214,13 +268,13 @@ app.layout = dbc.Container([
         className="mb-4 g-3"
     ),
 
-    # =====================================================
+    # =================================================
     # MAP + KPI
-    # =====================================================
-
+    # =================================================
     dbc.Row([
 
-        dbc.Col([
+        # MAP
+         dbc.Col([
 
             dbc.Card([
 
@@ -234,17 +288,17 @@ app.layout = dbc.Container([
                 dbc.CardBody([
 
                     dcc.Graph(
-                        id="Addis_map"
+                        id="Addis_map",
+                        figure={}
                     )
 
                 ])
 
-            ],
-                className="shadow-sm border-0 rounded-4"
-            )
+            ], className="shadow")
 
         ], lg=5),
 
+        # KPI CARDS
         dbc.Col([
 
             dbc.Row([
@@ -260,7 +314,7 @@ app.layout = dbc.Container([
                 dbc.Col([
                     create_card(
                         "Neonatal Death",
-                        "ND-card",
+                        "ND-cart",
                         "danger"
                     )
                 ], md=6),
@@ -268,7 +322,7 @@ app.layout = dbc.Container([
                 dbc.Col([
                     create_card(
                         "Breech Delivery",
-                        "BD-card",
+                        "BD-cart",
                         "warning"
                     )
                 ], md=6),
@@ -276,7 +330,7 @@ app.layout = dbc.Container([
                 dbc.Col([
                     create_card(
                         "SVD",
-                        "SVD-card",
+                        "SVD-cart",
                         "success"
                     )
                 ], md=6),
@@ -284,7 +338,7 @@ app.layout = dbc.Container([
                 dbc.Col([
                     create_card(
                         "Total Delivery",
-                        "delivery-card",
+                        "delivery-cart",
                         "info"
                     )
                 ], md=6),
@@ -292,7 +346,7 @@ app.layout = dbc.Container([
                 dbc.Col([
                     create_card(
                         "Still Birth",
-                        "SB-card",
+                        "SB-cart",
                         "secondary"
                     )
                 ], md=6)
@@ -307,10 +361,9 @@ app.layout = dbc.Container([
         className="mb-4 g-3"
     ),
 
-    # =====================================================
+    # =================================================
     # BAR + PIE
-    # =====================================================
-
+    # =================================================
     dbc.Row([
 
         dbc.Col([
@@ -319,7 +372,10 @@ app.layout = dbc.Container([
 
                 dbc.CardBody([
 
-                    dcc.Graph(id="Bar_graph")
+                    dcc.Graph(
+                        id="Bar_graphe",
+                        figure={}
+                    )
 
                 ])
 
@@ -335,7 +391,10 @@ app.layout = dbc.Container([
 
                 dbc.CardBody([
 
-                    dcc.Graph(id="Pie_graph")
+                    dcc.Graph(
+                        id="Pie_graphe",
+                        figure={}
+                    )
 
                 ])
 
@@ -349,10 +408,9 @@ app.layout = dbc.Container([
         className="mb-4 g-3"
     ),
 
-    # =====================================================
+    # =================================================
     # LINE CHART
-    # =====================================================
-
+    # =================================================
     dbc.Row([
 
         dbc.Col([
@@ -361,7 +419,10 @@ app.layout = dbc.Container([
 
                 dbc.CardBody([
 
-                    dcc.Graph(id="line_chart")
+                    dcc.Graph(
+                        id="line_chart",
+                        animate=True
+                    )
 
                 ])
 
@@ -371,40 +432,49 @@ app.layout = dbc.Container([
 
         ])
 
-    ]),
+    ],
+        className="mb-4"
+    ),
 
-    # =====================================================
+    # =================================================
     # FOOTER
-    # =====================================================
-
+    # =================================================
     dbc.Row([
 
         dbc.Col([
 
-            html.H6("MCH Dashboard"),
+            html.H5("MCH Dashboard"),
 
             html.P(
-                "Copyright © 2026"
+                "Copyright © 2026 "
+                "All rights reserved."
             )
 
-        ], md=6),
+        ],className="md-2"),
 
         dbc.Col([
 
-            html.P("Weldemariam Bahre"),
-            html.P("weldemariambahre@gmail.com"),
-            html.P("+251946674151")
+            html.P(
+                "Contact : Weldemariam Bahre"
+            ),
 
-        ], md=6)
+            html.P(
+                "Email : weldemariambahre@gmail.com"
+            ),
+
+            html.P(
+                "Phone : +251946674151"
+            )
+
+        ],className="md-2")
 
     ],
-
         className="""
         bg-primary
         text-white
-        p-3
+        p-2
         rounded-top
-        mt-4
+        mt-3
         """
     )
 
@@ -417,21 +487,19 @@ app.layout = dbc.Container([
     }
 )
 
+
 # =====================================================
 # UPDATE CHARTS
 # =====================================================
-
 @callback(
 
-    Output("Bar_graph", "figure"),
-    Output("Pie_graph", "figure"),
+    Output("Bar_graphe", "figure"),
+    Output("Pie_graphe", "figure"),
     Output("line_chart", "figure"),
     Output("Addis_map", "figure"),
 
     Input("health_value", "value")
-
 )
-
 def update_charts(value):
 
     sorted_df = df.sort_values(
@@ -439,7 +507,9 @@ def update_charts(value):
         ascending=False
     )
 
-    # BAR
+    # =================================================
+    # BAR CHART
+    # =================================================
     bar_fig = px.bar(
 
         sorted_df,
@@ -456,13 +526,53 @@ def update_charts(value):
         template="plotly_white"
     )
 
-    bar_fig.update_layout(
-        title=f"{value} by Sub City",
-        showlegend=False,
-        height=500
+    bar_fig.update_traces(
+
+        texttemplate='%{y:,}',
+        textposition='outside',
+
+        hovertemplate=
+        "<b>%{x}</b><br>" +
+        f"{value}: " +
+        "%{y:,}<extra></extra>"
     )
 
-    # PIE
+    bar_fig.update_layout(
+
+        title={
+            "text": f"{value} by Sub City",
+            "x": 0.5,
+            "xanchor": "center"
+        },
+
+        height=500,
+
+        paper_bgcolor="#f8f9fa",
+        plot_bgcolor="#f8f9fa",
+
+        showlegend=False,
+
+        font=dict(
+            family="Arial",
+            size=14
+        ),
+
+        margin=dict(
+            t=70,
+            l=30,
+            r=30,
+            b=30
+        ),
+
+        transition={
+            "duration": 1200,
+            "easing": "cubic-in-out"
+        }
+    )
+
+    # =================================================
+    # PIE CHART
+    # =================================================
     pie_fig = px.pie(
 
         sorted_df,
@@ -470,15 +580,44 @@ def update_charts(value):
         names="Sub city",
         values=value,
 
-        hole=0.5
+        hole=0.55,
+
+        color_discrete_sequence=
+        px.colors.qualitative.Set3
+    )
+
+    pie_fig.update_traces(
+
+        textposition='inside',
+
+        textinfo='percent+label',
+
+        hovertemplate=
+        "<b>%{label}</b><br>" +
+        "Value: %{value:,}<br>" +
+        "Percent: %{percent}<extra></extra>"
     )
 
     pie_fig.update_layout(
-        title=f"{value} Distribution",
-        height=500
+
+        title={
+            "text": f"{value} Distribution",
+            "x": 0.5
+        },
+
+        height=500,
+
+        paper_bgcolor="#f8f9fa",
+
+        font=dict(
+            family="Arial",
+            size=14
+        )
     )
 
-    # LINE
+    # =================================================
+    # LINE CHART
+    # =================================================
     line_fig = px.line(
 
         sorted_df,
@@ -486,43 +625,92 @@ def update_charts(value):
         x="Sub city",
         y=value,
 
-        markers=True
+        markers=True,
+
+        template="plotly_white"
+    )
+
+    line_fig.update_traces(
+        marker_line_width=3,
+        marker_line_color="black",
+
+        line=dict(
+            width=5,
+            shape="spline"
+        ),
+
+        marker=dict(
+            size=12,
+            line=dict(
+                width=2,
+                color="blue"
+            )
+        ),
+
+        hovertemplate=
+        "<b>%{x}</b><br>" +
+        f"{value}: " +
+        "%{y:,}<extra></extra>"
     )
 
     line_fig.update_layout(
-        title=f"{value} Trend",
-        height=500
-    )
 
-    # MAP
-    fig_map = px.choropleth_mapbox(
-
-        merged,
-
-        geojson=merged.__geo_interface__,
-
-        locations="id",
-
-        featureidkey="properties.id",
-
-        color=value,
-
-        mapbox_style="carto-positron",
-
-        center={
-            "lat": 8.96,
-            "lon": 38.80
+        title={
+            "text": f"{value} Trend by Sub City",
+            "x": 0.5
         },
 
-        zoom=10,
+        height=500,
 
-        opacity=0.7,
+        hovermode="x unified",
 
-        hover_name="Sub city",
+        paper_bgcolor="#f8f9fa",
+        plot_bgcolor="#f8f9fa",
 
-        color_continuous_scale="Viridis"
+        font=dict(
+            family="Arial",
+            size=14
+        ),
+
+        margin=dict(
+            t=70,
+            l=40,
+            r=40,
+            b=40
+        ),
+
+        transition={
+            "duration": 1200,
+            "easing": "cubic-in-out"
+        }
     )
 
+    line_fig.update_xaxes(
+        showgrid=False
+    )
+
+    line_fig.update_yaxes(
+        gridcolor="lightgray"
+    )
+
+    # =================================================
+    # MAP
+    # =================================================
+    fig_map = px.choropleth_mapbox(
+    merged,
+    geojson=merged.__geo_interface__,
+    locations="id",
+    featureidkey="properties.id",
+    color=value,
+    mapbox_style="carto-positron",
+    center={"lat": 8.96, "lon": 38.80},
+    zoom=10,
+    opacity=0.7,
+    hover_name="Sub city",
+    color_continuous_scale=px.colors.sequential.Peach
+)
+
+    # BLACK BORDERS
     fig_map.update_traces(
         marker_line_color="black",
         marker_line_width=2
@@ -544,23 +732,21 @@ def update_charts(value):
         fig_map
     )
 
+
 # =====================================================
 # KPI CALLBACK
 # =====================================================
-
 @callback(
 
     Output("anc-card", "children"),
-    Output("ND-card", "children"),
-    Output("BD-card", "children"),
-    Output("SVD-card", "children"),
-    Output("delivery-card", "children"),
-    Output("SB-card", "children"),
+    Output("ND-cart", "children"),
+    Output("BD-cart", "children"),
+    Output("SVD-cart", "children"),
+    Output("delivery-cart", "children"),
+    Output("SB-cart", "children"),
 
     Input("subcity-dropdown", "value")
-
 )
-
 def update_data(subcity):
 
     temp = df[df["Sub city"] == subcity]
@@ -580,12 +766,16 @@ def update_data(subcity):
         f"{svd:,}",
         f"{delivery:,}",
         f"{sb:,}"
-
     )
+
 
 # =====================================================
 # RUN APP
 # =====================================================
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run_server(host="0.0.0.0", port=8050, debug=False)
+   # app.run(debug=True)
+    
+# app = Dash(__name__)
+
+# server = app.server
